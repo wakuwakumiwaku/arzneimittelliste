@@ -1,0 +1,11 @@
+sources/
+.local/
+dist/
+node_modules/
+__pycache__/
+*.pyc
+.build-*/
+.env*
+*.log
+*sammlung*.json
+*speicher*.txt

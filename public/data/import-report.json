@@ -1,0 +1,30 @@
+{
+  "edition": "2026-07-01",
+  "pages": 34,
+  "rows": 917,
+  "sections": {
+    "I": 752,
+    "aroma": 64,
+    "aux": 7,
+    "oils": 11,
+    "blood": 2,
+    "II": 31,
+    "III": 46,
+    "general": 4
+  },
+  "price_kinds": {
+    "fixed_chf": 49,
+    "graduated_chf": 817,
+    "reference_only": 4,
+    "taxpoints": 31,
+    "unpriced": 16
+  },
+  "method": "pdftotext -bbox-layout + -layout; geometrische Quellzeilen; kein OCR",
+  "unassigned_price_lines": 0,
+  "warnings": [
+    "Nicht bepreiste Verweiszeilen bleiben offen.",
+    "Sondereinheiten ohne sichere Gramm-/Milliliterzuordnung sind nicht rechenbar.",
+    "Oberhalb des fünffachen höchsten Mengenansatzes nur die ausdrücklich genannten 5×/10×-Fälle berechnet; übrige Fälle offen.",
+    "Keine automatische Prüfung von Limitierungen, Herstellungsvoraussetzungen, Inklusivleistungen, Zuschlagsmengen oder Versicherungsanspruch."
+  ]
+}

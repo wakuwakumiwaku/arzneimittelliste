@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,rm,mkdir,writeFile} from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import http from 'node:http';
+import {build,project} from '../scripts/build.mjs';
+import {runtimeFiles} from '../scripts/files.mjs';
+import {createAppServer} from '../scripts/serve.mjs';
+const request=(port,url,options={})=>new Promise((resolve,reject)=>{const req=http.request({host:'127.0.0.1',port,path:url,...options},res=>{let body='';res.setEncoding('utf8');res.on('data',s=>body+=s);res.on('end',()=>resolve({status:res.statusCode,body,headers:res.headers}));});req.on('error',reject);req.end();});
+test('real HTTP at Pages subpath: every runtime asset, security/HEAD/404/405/Host',async()=>{const root=await mkdtemp(path.join(os.tmpdir(),'alt-server-test-'));let s;try{await build({root:project,destination:path.join(root,'site')});await mkdir(path.join(root,'site','.local'));await writeFile(path.join(root,'site','.local/private.txt'),'CANARY');s=createAppServer({root:path.join(root,'site'),basePath:'/arzneimittelliste/'});await new Promise(r=>s.listen(0,'127.0.0.1',r));const {port}=s.address();for(const f of Object.keys(runtimeFiles)){const r=await request(port,'/arzneimittelliste/'+f);assert.equal(r.status,200,f);assert.equal(r.headers['x-content-type-options'],'nosniff');assert.match(r.headers['content-security-policy'],/object-src 'none'/);}assert.equal((await request(port,'/arzneimittelliste/')).status,200);const head=await request(port,'/arzneimittelliste/',{method:'HEAD'});assert.equal(head.status,200);assert.equal(head.body,'');for(const f of ['/','/arzneimittelliste/.local/private.txt','/arzneimittelliste/sources/private.pdf','/arzneimittelliste/../package.json','/arzneimittelliste/%2e%2e/package.json','/arzneimittelliste/node_modules/x','/arzneimittelliste/missing'])assert.equal((await request(port,f)).status,404,f);assert.equal((await request(port,'/arzneimittelliste/',{method:'POST'})).status,405);assert.equal((await request(port,'/arzneimittelliste/',{headers:{host:'evil.invalid'}})).status,403);assert.equal((await request(port,'/arzneimittelliste/%QQ')).status,400);}finally{if(s)await new Promise(r=>s.close(r));await rm(root,{recursive:true,force:true});}});

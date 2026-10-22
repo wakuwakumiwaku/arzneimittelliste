@@ -1,0 +1,21 @@
+{
+  "title": "Arzneimittelliste mit Tarif (ALT), Anhang 4 KLV",
+  "edition": "2026-07-01",
+  "publication_date": "2026-06-24",
+  "retrieved_at": "2026-10-22T03:40:03.357013+00:00",
+  "landing_url": "https://www.bag.admin.ch/de/arzneimittelliste-mit-tarif-alt",
+  "files": [
+    {
+      "file": "alt-2026-07-01.pdf",
+      "url": "https://www.bag.admin.ch/dam/de/sd-web/-HLD9iP4EcXL/Gesamtliste_ALT_Ausgabe%2001.07.2026.pdf",
+      "bytes": 932872,
+      "sha256": "73a82c5e4dff4a7249c5e9db0c8c6918d006e847949ca4de4ef894c99fc78d2c"
+    },
+    {
+      "file": "bag-alt.html",
+      "url": "https://www.bag.admin.ch/de/arzneimittelliste-mit-tarif-alt",
+      "bytes": 842162,
+      "sha256": "b060d0b2735bdfb0ba28f0add7747ec5f0a1b4f1a471ebec071c035bba90ab1e"
+    }
+  ]
+}

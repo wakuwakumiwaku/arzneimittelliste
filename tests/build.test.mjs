@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,mkdir,writeFile,copyFile,readFile,readdir,rm,symlink} from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import {fileURLToPath} from 'node:url';
+import {runtimeFiles} from '../scripts/files.mjs';
+import {build} from '../scripts/build.mjs';
+const project=fileURLToPath(new URL('../',import.meta.url));
+async function files(dir,prefix=''){const out=[];for(const e of await readdir(dir,{withFileTypes:true})){const key=prefix+e.name;if(e.isDirectory())out.push(...await files(path.join(dir,e.name),key+'/'));else out.push(key);}return out.sort();}
+test('exact build allowlist, private canaries excluded, bad inputs preserve previous build',async()=>{const root=await mkdtemp(path.join(os.tmpdir(),'alt-build-test-'));try{for(const src of Object.values(runtimeFiles)){const p=path.join(root,src);await mkdir(path.dirname(p),{recursive:true});await copyFile(path.join(project,src),p);}for(const p of ['public/private-canary.txt','sources/private.pdf','.local/private.json']){await mkdir(path.dirname(path.join(root,p)),{recursive:true});await writeFile(path.join(root,p),'PRIVATE-CANARY');}await build({root});assert.deepEqual(await files(path.join(root,'dist')),Object.keys(runtimeFiles).sort());const before=await readFile(path.join(root,'dist/data/catalog.json'));const data=path.join(root,'public/data/catalog.json'),valid=await readFile(data);await writeFile(data,'{broken');await assert.rejects(build({root}));assert.deepEqual(await readFile(path.join(root,'dist/data/catalog.json')),before);await writeFile(data,valid);const c=JSON.parse(valid);c.positions.pop();await writeFile(data,JSON.stringify(c));await assert.rejects(build({root}));assert.deepEqual(await readFile(path.join(root,'dist/data/catalog.json')),before);await writeFile(data,valid);await rm(data);await assert.rejects(build({root}));assert.deepEqual(await readFile(path.join(root,'dist/data/catalog.json')),before);await symlink(path.join(root,'.local/private.json'),data);await assert.rejects(build({root}),/regular file/);assert.deepEqual(await readFile(path.join(root,'dist/data/catalog.json')),before);}finally{await rm(root,{recursive:true,force:true});}});
