@@ -61,11 +61,13 @@ function showSources(page=3){$('source-page').value=String(page);renderSourcePag
 function renderSourcePage(){const p=pages.pages.find(p=>p.page===Number($('source-page').value));$('source-location').textContent='Originaltext (PDF-Textebene, kein OCR) · Seite '+p.page+' von 34';$('source-text').textContent=p.text;}
 function download(name,text,type='application/json'){const blob=new Blob([text],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 function exportJson(prefix='alt-sammlung'){assertDrafts();const checked=validateWorkspace(workspace,catalog);download(prefix+'.json',JSON.stringify(checked,null,2)+'\n');report('JSON-Sicherung heruntergeladen. Persönliche Sammlung bleibt lokal.');}
-function printPlan(){
- assertDrafts();const t=renderTotal(),area=$('print-area');area.replaceChildren(node('h1',workspace.name||'ALT-Zusammenstellung'),node('p','Ausgabe '+catalog.edition+' · ALT, BAG · Teilsumme exkl. MWST'),node('pre',workspace.note,'original'));
+function renderPrintPlan(){
+ const area=$('print-area');area.replaceChildren();assertDrafts();const t=renderTotal();area.append(node('h1',workspace.name||'ALT-Zusammenstellung'),node('p','Ausgabe '+catalog.edition+' · ALT, BAG · Teilsumme exkl. MWST'),node('pre',workspace.note,'original'));
  const ruleIds=new Set();for(const r of t.results){const article=node('article');article.append(node('h2',r.position.title),node('p',`${r.line.quantity} × ${r.position.unit} · ${PRICE_LABELS[r.position.price.kind]} · ${money(r.cents)}`),node('p',r.rule),node('pre',r.line.note,'original'),node('pre',r.position.notes,'original'),node('p',`PDF-Seite ${r.position.source.pdf_page} · ${r.position.id}`));area.append(article);for(const id of r.position.rule_ids)ruleIds.add(id);}
- area.append(node('h2',(t.complete?'Teilsumme: ':'UNVOLLSTÄNDIGE Teilsumme: ')+money(t.cents)),node('p',`${t.unresolved} offene Zeile(n). Keine MWST, kein Rezepturminimum und keine automatischen Zuschläge. Keine Abrechnungs-/Erstattungszusage.`));for(const id of ruleIds){const r=catalog.rules.find(r=>r.id===id);area.append(node('h3',r.title),node('pre',r.text,'original'));}area.append(node('p','Original: '+provenance.files[0].url),node('p','Original-SHA256: '+catalog.source_sha256));area.hidden=false;window.print();
+ area.append(node('h2',(t.complete?'Teilsumme: ':'UNVOLLSTÄNDIGE Teilsumme: ')+money(t.cents)),node('p',`${t.unresolved} offene Zeile(n). Keine MWST, kein Rezepturminimum und keine automatischen Zuschläge. Keine Abrechnungs-/Erstattungszusage.`));for(const id of ruleIds){const r=catalog.rules.find(r=>r.id===id);area.append(node('h3',r.title),node('pre',r.text,'original'));}area.append(node('p','Original: '+provenance.files[0].url),node('p','Original-SHA256: '+catalog.source_sha256));area.hidden=false;
 }
+function printPlan(){renderPrintPlan();window.print();}
+function beforePrint(){try{renderPrintPlan();}catch(e){const area=$('print-area');area.replaceChildren(node('h1','Keine gültige Druckansicht'),node('p',e.message));area.hidden=false;report(e.message);}}
 async function previewFile(file){
  const token=++importToken;importCandidate=null;$('import-confirm').disabled=true;
  if(!file)return;if(file.size>5*1024*1024)throw Error('Sicherung ist zu gross (maximal 5 MiB).');
@@ -75,6 +77,7 @@ async function previewFile(file){
  $('import-before').disabled=false;$('import-confirm').disabled=true;$('import-dialog').showModal();
 }
 function initialize(){
+ window.addEventListener('beforeprint',beforePrint);
  for(const d of document.querySelectorAll('[data-close]'))d.addEventListener('click',()=>$(d.dataset.close).close());
  $('detail-add').addEventListener('click',()=>attempt(()=>addLine(selected)));
  $('source-button').addEventListener('click',()=>showSources());$('source-page').addEventListener('change',renderSourcePage);
