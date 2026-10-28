@@ -445,7 +445,28 @@ try{
   await beforeprint();eq('browser print follows real confirmed import',await text(page,'#print-area > h1'),imported.name);ok('browser print current imported note and money',(await text(page,'#print-area')).includes(imported.note)&&(await text(page,'#print-area')).includes('Teilsumme: CHF 18.20'));ok('browser print excludes replaced collection row',!(await text(page,'#print-area')).includes(material.id));
   page.once('dialog',dialog=>dialog.accept());await page.locator('#clear').click();await beforeprint();eq('browser print follows actual collection clear',await page.locator('#print-area article').count(),0);ok('clear cannot resurrect imported note',!(await text(page,'#print-area')).includes(imported.note));eq('cleared collection really persisted',(await state(page)).lines,[]);
  }));
- currentScenario='final-observability';eq('all 20 named native scenarios actually executed',report.scenarios.length,20);eq('no duplicate native scenario names',new Set(report.scenarios.map(s=>s.name)).size,20);eq('all page console warnings/errors/pageerrors, HTTP/request failures, methods and external requests clean',report.violations,[]);
+ for(const [offset,afterConfirm]of [false,true].entries())await scenario(`${21+offset}-obsolete-file-read-failure-${afterConfirm?'after-confirm':'during-preview'}`,()=>isolated({workspace:seeded([line(material,'3.21','Keep original line')])},async page=>{
+  const before=await raw(page),draft=await visibleDraft(page);
+  // Read original native file bytes, then hold/reject only the File.text I/O boundary.
+  await page.evaluate(()=>{const original=File.prototype.text;window.__heldRead={started:false,settled:false};File.prototype.text=async function(){const value=await original.call(this);if(this.name==='held-old-A.json'){window.__heldRead.started=true;try{return await new Promise((resolve,reject)=>{window.__heldRead.reject=()=>reject(Error('obsolete native A read failed'));});}finally{window.__heldRead.settled=true;}}return value;};});
+  await upload(page,Buffer.from(JSON.stringify(seeded())),'held-old-A.json');await page.waitForFunction(()=>window.__heldRead.started);
+  const imported={...empty(),name:'Synthetic current import B',note:'Current B note',lines:[line(capsule,'2','Current B line')],favorites:[capsule.id]};
+  await upload(page,Buffer.from(JSON.stringify(imported)),'current-B.json');await page.locator('#import-dialog').waitFor({state:'visible'});
+  ok('new B has the current visible preview',(await text(page,'#import-preview')).includes(imported.name));eq('preview does not write',await raw(page),before);eq('preview retains draft',await visibleDraft(page),draft);
+  const confirm=async()=>{const backup=await actualDownload(page,'#import-before','overlap-before-image');eq('real before-image preserves original collection',JSON.parse(backup.text),JSON.parse(before));await page.locator('#import-confirm').click();await page.locator('#import-dialog').waitFor({state:'hidden'});eq('current B durably confirmed',await state(page),imported);};
+  if(afterConfirm)await confirm();
+  const status=await text(page,'#status');await page.evaluate(()=>window.__heldRead.reject());await page.waitForFunction(()=>window.__heldRead.settled);await page.evaluate(()=>new Promise(requestAnimationFrame));
+  eq('obsolete failure cannot overwrite current operation status',await text(page,'#status'),status);
+  if(!afterConfirm){eq('B preview survives obsolete failure',await page.locator('#import-dialog').isVisible(),true);await confirm();}
+  const exported=await actualDownload(page,'#export-json','overlap-final-B');eq('actual exported bytes contain only confirmed B',JSON.parse(exported.text),imported);eq('confirmed B remains unchanged',await state(page),imported);
+ }));
+ await scenario('23-current-file-read-failure-still-reported',()=>isolated({workspace:seeded()},async page=>{
+  const before=await raw(page),draft=await visibleDraft(page),revision=await page.evaluate(()=>window.__nativeProbe.statusRevision);
+  await page.evaluate(()=>{const original=File.prototype.text;File.prototype.text=async function(){await original.call(this);throw Error('current native read failed');};});
+  await upload(page,Buffer.from(JSON.stringify(empty())),'current-read-error.json');await page.waitForFunction(r=>window.__nativeProbe.statusRevision>r,revision);
+  eq('current read error remains visible',await text(page,'#status'),'current native read failed');eq('current error leaves collection bytes',await raw(page),before);eq('current error leaves draft',await visibleDraft(page),draft);eq('current error opens no preview',await page.locator('#import-dialog').isVisible(),false);
+ }));
+ currentScenario='final-observability';eq('all 23 named native scenarios actually executed',report.scenarios.length,23);eq('no duplicate native scenario names',new Set(report.scenarios.map(s=>s.name)).size,23);eq('all page console warnings/errors/pageerrors, HTTP/request failures, methods and external requests clean',report.violations,[]);
 }catch(error){report.scenarios.push({name:currentScenario,status:'failed',error:error.stack});console.error(error.stack);}
 finally{
  currentScenario='cleanup';

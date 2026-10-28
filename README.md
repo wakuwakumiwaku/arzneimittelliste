@@ -81,7 +81,7 @@ Jeder echte Lauf behält `.local/browser/<eindeutiger Lauf>/` mit `results.json`
 
 `tests/price-shape.test.mjs` ist über das vorhandene `npm test`-Glob und das öffentliche Inventar registriert. Die Suite prüft den Validator sowie die tatsächlichen Check-/Build-CLI-Entrypoints mit getrennten Mutanten, darunter Preisart-Arrays mit unveränderten echten **nichtleeren** Quellzellen. Jede CLI-Fixture startet mit einem gültigen Build; vor und nach jeder Ablehnung werden der vollständige Neun-Dateien-Pfadsatz und sämtliche SHA256-Werte verglichen. Die ungültigen Eingabebytes dürfen ebenfalls nicht verändert werden. Wiederhergestellte Originaldaten müssen wieder denselben gültigen Build erzeugen. Gültige Kontrollen erhalten alle 917 Zeilen und fünf Preisarten, offene Werte, CHF 1.05/TP und die bisherigen Rechengrenzen. Die explizite Null-CHF-Typkontrolle ist synthetisch und keine amtliche Quellzeile; im Originalbestand gibt es keinen Null-CHF-Ansatz.
 
-Diese Prüfungen sind browserfrei und ersetzen weder die separate native 20-Szenarien-Abnahme noch unabhängige SPEC-/QUALITY- und Publikationsprüfungen.
+Diese Prüfungen sind browserfrei und ersetzen weder die separate native 23-Szenarien-Abnahme noch unabhängige SPEC-/QUALITY- und Publikationsprüfungen.
 
 ## Veröffentlichungsvorbereitung
 

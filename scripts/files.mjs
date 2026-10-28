@@ -13,6 +13,6 @@ export const runtimeFiles=Object.freeze({
 export const publicMembers=Object.freeze([
  '.gitignore','.gitattributes','.github/workflows/pages.yml','package.json','package-lock.json','README.md','DATA.md','LICENSE','docs/CODEBASE.md',
  'scripts/acquire_sources.py','scripts/import_catalog.py','scripts/files.mjs','scripts/check.mjs','scripts/build.mjs','scripts/serve.mjs',
- 'tests/domain.test.mjs','tests/build.test.mjs','tests/server.test.mjs','tests/price-shape.test.mjs','tests/test_import_catalog.py','tests/browser.mjs',
+ 'tests/domain.test.mjs','tests/build.test.mjs','tests/server.test.mjs','tests/price-shape.test.mjs','tests/test_import_catalog.py','tests/browser.mjs','tests/import-intent.test.mjs','tests/helpers/import-intent.mjs',
  ...Object.values(runtimeFiles)
 ]);

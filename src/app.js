@@ -71,7 +71,7 @@ function beforePrint(){try{renderPrintPlan();}catch(e){const area=$('print-area'
 async function previewFile(file){
  const token=++importToken;importCandidate=null;$('import-confirm').disabled=true;
  if(!file)return;if(file.size>5*1024*1024)throw Error('Sicherung ist zu gross (maximal 5 MiB).');
- const data=await file.text();if(token!==importToken)return;
+ let data;try{data=await file.text();}catch(e){if(token!==importToken)return;throw e;}if(token!==importToken)return;
  const candidate=validateWorkspace(JSON.parse(data),catalog);assertDrafts();importSnapshot=JSON.stringify(workspace);importCandidate=candidate;
  $('import-preview').textContent=`„${candidate.name}“ · ${candidate.lines.length} Positionen · ${candidate.favorites.length} gemerkt · Ausgabe ${candidate.edition}. Aktuell: ${workspace.lines.length} Positionen. Noch nichts ersetzt.`;
  $('import-before').disabled=false;$('import-confirm').disabled=true;$('import-dialog').showModal();
