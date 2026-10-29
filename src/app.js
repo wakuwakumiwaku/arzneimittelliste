@@ -12,17 +12,30 @@ function labelPrice(p){const a=p.price;if(a.kind==='taxpoints')return a.points+'
 function currentLines(){return workspace.lines.map(l=>drafts.has(l.id)?{...l,quantity:drafts.get(l.id)}:l);}
 function assertDrafts(){for(const l of currentLines())quantity(l.quantity,['fixed_chf','taxpoints'].includes(byId.get(l.id).price.kind));}
 function renderTotal(){const t=totals(currentLines(),byId);$('total').textContent=money(t.cents);$('total-status').textContent=t.complete?'Summe der ausgewählten Zeilen, kein vollständiger Rezeptur-/Abrechnungsbetrag.':`UNVOLLSTÄNDIG: ${t.unresolved} offene oder ungültige Zeile(n) nicht als CHF 0 bewertet.`;return t;}
-function renderResults(){
+function updateFavorite(star,p){const starred=workspace.favorites.includes(p.id);star.textContent=starred?'★':'☆';star.setAttribute('aria-label',(starred?'Aus Merkliste entfernen: ':'Merken: ')+p.title);star.setAttribute('aria-pressed',String(starred));}
+function renderResults(removedRow=null){
  const matches=filterPositions(catalog,index,{query:$('search').value,section:$('section').value,kind:$('kind').value,flag:$('flag').value,favoritesOnly:$('favorites-only').checked,favorites:workspace.favorites});
  const shown=matches.slice(0,visible),fragment=document.createDocumentFragment();
+ // A favorite removal only deletes one match and may append the next prefix row.
+ // Keep surviving rows connected, including any unrelated focused control.
+ if(removedRow)removedRow.remove();
+ const retained=removedRow?new Set([...$('results').children].map(row=>row.dataset.id)):null;
  for(const p of shown){
+  if(retained?.has(p.id))continue;
   const row=node('article','','result-row');row.dataset.id=p.id;
-  const starred=workspace.favorites.includes(p.id),star=button(starred?'★':'☆',()=>{workspace.favorites=starred?workspace.favorites.filter(id=>id!==p.id):[...workspace.favorites,p.id];persist();renderResults();},'favorite');star.setAttribute('aria-label',(starred?'Aus Merkliste entfernen: ':'Merken: ')+p.title);star.setAttribute('aria-pressed',String(starred));
+  const star=button('',()=>{
+   const starred=workspace.favorites.includes(p.id),filtered=$('favorites-only').checked,focusIndex=filtered&&document.activeElement===star?[...$('results').children].indexOf(row):-1;
+   workspace.favorites=starred?workspace.favorites.filter(id=>id!==p.id):[...workspace.favorites,p.id];persist();
+   if(!filtered){updateFavorite(star,p);return;}
+   renderResults(row);
+   if(focusIndex>=0){const stars=$('results').querySelectorAll('.favorite');(stars[Math.min(focusIndex,stars.length-1)]??$('favorites-only')).focus();}
+  },'favorite');updateFavorite(star,p);
   const main=button('',()=>showDetail(p),'row-main');main.append(node('span',p.title,'row-title'),node('span',[p.code,...p.flags,'PDF S. '+p.source.pdf_page].filter(Boolean).join(' · '),'row-meta'),node('span',labelPrice(p),'price'),node('span',p.unit,'row-meta'));
   const add=button('+',()=>addLine(p),'add');add.setAttribute('aria-label','Hinzufügen: '+p.title);row.append(star,main,add);fragment.append(row);
  }
  if(!shown.length)fragment.append(node('p','Keine Positionen für diese Filter. Suche/Filter zurücksetzen oder Originalquelle prüfen.','empty'));
- $('results').replaceChildren(fragment);$('result-count').textContent=`${matches.length} Treffer im vollständigen Katalog (${catalog.positions.length} Quellzeilen) · ${shown.length} angezeigt`;$('more').hidden=shown.length===matches.length;
+ if(removedRow)$('results').append(fragment);else $('results').replaceChildren(fragment);
+ $('result-count').textContent=`${matches.length} Treffer im vollständigen Katalog (${catalog.positions.length} Quellzeilen) · ${shown.length} angezeigt`;$('more').hidden=shown.length===matches.length;
 }
 function addLine(p){if(workspace.lines.some(l=>l.id===p.id)){report('Bereits in der Sammlung. Menge dort anpassen.');return;}if(workspace.lines.length>=1000)throw Error('Maximal 1 000 Zeilen.');workspace.lines.push({id:p.id,quantity:'1',note:''});persist();renderPlan();report('Hinzugefügt: '+p.title);}
 function renderPlan(){
