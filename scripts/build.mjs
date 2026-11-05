@@ -5,7 +5,15 @@ import {runtimeFiles} from './files.mjs';
 import {validateCatalog} from '../src/domain.js';
 export const project=fileURLToPath(new URL('../',import.meta.url));
 export async function validatedInputs(root=project){
- const entries=await Promise.all(Object.entries(runtimeFiles).map(async([dest,source])=>{const p=path.join(root,source),s=await lstat(p);if(!s.isFile()||s.isSymbolicLink())throw Error('Runtime input must be a regular file: '+source);return [dest,await readFile(p)];}));
+ const entries=await Promise.all(Object.entries(runtimeFiles).map(async([dest,source])=>{
+  let directory=root;
+  for(const part of source.split('/').slice(0,-1)){
+   directory=path.join(directory,part);const stat=await lstat(directory);
+   if(!stat.isDirectory()||stat.isSymbolicLink())throw Error('Runtime input directory must not be a symlink: '+source);
+  }
+  const p=path.join(root,source),s=await lstat(p);if(!s.isFile()||s.isSymbolicLink())throw Error('Runtime input must be a regular file: '+source);
+  return [dest,await readFile(p)];
+ }));
  const map=new Map(entries),json=name=>JSON.parse(map.get('data/'+name).toString('utf8')),c=validateCatalog(json('catalog.json')),p=json('source-pages.json'),s=json('provenance.json'),r=json('import-report.json');
  if(p.source_sha256!==c.source_sha256||p.edition!==c.edition||!Array.isArray(p.pages)||p.pages.length!==34||p.pages.some((p,i)=>p.page!==i+1||typeof p.text!=='string')||s.files?.[0]?.sha256!==c.source_sha256||s.files[0].bytes!==932872||r.rows!==c.positions.length||JSON.stringify(r)!==JSON.stringify(c.report))throw Error('Inconsistent source bundle');
  if(typeof s.retrieved_at!=='string'||!/^https:\/\/www\.bag\.admin\.ch\/dam\/.*\.pdf$/.test(s.files[0].url))throw Error('Invalid provenance');
