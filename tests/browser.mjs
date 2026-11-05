@@ -466,7 +466,24 @@ try{
   await upload(page,Buffer.from(JSON.stringify(empty())),'current-read-error.json');await page.waitForFunction(r=>window.__nativeProbe.statusRevision>r,revision);
   eq('current read error remains visible',await text(page,'#status'),'current native read failed');eq('current error leaves collection bytes',await raw(page),before);eq('current error leaves draft',await visibleDraft(page),draft);eq('current error opens no preview',await page.locator('#import-dialog').isVisible(),false);
  }));
- currentScenario='final-observability';eq('all 23 named native scenarios actually executed',report.scenarios.length,23);eq('no duplicate native scenario names',new Set(report.scenarios.map(s=>s.name)).size,23);eq('all page console warnings/errors/pageerrors, HTTP/request failures, methods and external requests clean',report.violations,[]);
+ await scenario('24-pagination-keyboard-preserves-prefix-and-enters-new-results',()=>isolated({},async page=>{
+  const observe=async expected=>{
+   const result=await page.evaluate(()=>({retained:window.__paginationRows.every((e,i)=>document.querySelector('#results').children[i]===e),focusedId:document.activeElement.closest('#results [data-id]')?.dataset.id??null,focusedDetails:document.activeElement.matches('#results .row-main')}));
+   eq('append retains connected prefix and focuses the first new detail control',result,{retained:true,focusedId:expected,focusedDetails:true});
+  };
+  const remember=()=>page.evaluate(()=>{window.__paginationRows=[...document.querySelector('#results').children];});
+  eq('initial full-corpus prefix',await ids(page),positions.slice(0,40).map(p=>p.id));
+  await remember();await page.locator('#more').focus();await page.keyboard.press('Enter');
+  eq('second page source order',await ids(page),positions.slice(0,80).map(p=>p.id));await observe(positions[40].id);
+  await page.keyboard.press('Enter');eq('newly focused detail opens the correct record',await text(page,'#detail-title'),positions[40].title);await closeDialog(page,'detail-dialog');
+  await page.locator('#kind').selectOption('fixed_chf');const fixed=positions.filter(p=>p.price.kind==='fixed_chf');assert(fixed.length>40&&fixed.length<80);
+  eq('filter starts a fresh prefix',await ids(page),fixed.slice(0,40).map(p=>p.id));
+  await remember();await page.locator('#more').focus();await page.keyboard.press('Space');
+  eq('last partial page has every filtered ID exactly once',await ids(page),fixed.map(p=>p.id));await observe(fixed[40].id);
+  eq('exhausted pagination control hidden',await page.locator('#more').isHidden(),true);eq('pagination never writes workspace',await raw(page),null);
+  await reset(page);eq('reset discards the old result generation',await ids(page),positions.slice(0,40).map(p=>p.id));
+ }));
+ currentScenario='final-observability';eq('all 24 named native scenarios actually executed',report.scenarios.length,24);eq('no duplicate native scenario names',new Set(report.scenarios.map(s=>s.name)).size,24);eq('all page console warnings/errors/pageerrors, HTTP/request failures, methods and external requests clean',report.violations,[]);
 }catch(error){report.scenarios.push({name:currentScenario,status:'failed',error:error.stack});console.error(error.stack);}
 finally{
  currentScenario='cleanup';

@@ -31,7 +31,7 @@ if(typeof vm.SourceTextModule!=='function'){
   const r=spawnSync(process.execPath,['--experimental-vm-modules','--test','--test-name-pattern=^bookmark ',fileURLToPath(import.meta.url)],{env,encoding:'utf8',maxBuffer:4*1024*1024});
   t.diagnostic(r.stdout);if(r.stderr)t.diagnostic(r.stderr);
   assert.ifError(r.error);assert.equal(r.signal,null);assert.equal(r.status,0,'real-handler regressions must pass');
-  assert.match(r.stdout,/# tests 27\b/,'all registered bookmark cases must actually execute');assert.match(r.stdout,/# pass 27\b/);assert.doesNotMatch(r.stdout,/skipping running files|not ok /);
+  assert.match(r.stdout,/# tests 28\b/,'all registered bookmark cases must actually execute');assert.match(r.stdout,/# pass 28\b/);assert.doesNotMatch(r.stdout,/skipping running files|not ok /);
  });
 }else{
  const appUrl=new URL('../src/app.js',import.meta.url),source=await readFile(appUrl,'utf8'),html=await readFile(new URL('../index.html',import.meta.url),'utf8');
@@ -61,6 +61,7 @@ if(typeof vm.SourceTextModule!=='function'){
    async fire(type,event={}){for(const fn of this.listeners[type]??[])await fn({target:this,...event});await new Promise(resolve=>setImmediate(resolve));}
    click(){return this.disabled?Promise.resolve():this.fire('click');}
    focus(){assert.ok(this.isConnected,'cannot focus detached control');work.focused.push(this);doc.activeElement=this;}
+   querySelector(selector){assert.equal(selector,'.row-main');return descendants(this).find(e=>e.className==='row-main')??null;}
    querySelectorAll(selector){assert.equal(selector,'.favorite');return descendants(this).filter(e=>e.className==='favorite');}
    showModal(){this.open=true;}
    close(){this.open=false;return this.fire('close');}
@@ -82,6 +83,17 @@ if(typeof vm.SourceTextModule!=='function'){
   assert.equal(doc.body.dataset.ready,'true','actual app bootstraps with real source package');assert.equal(work.attempts.length,0,'startup never writes');
   return {get,doc,work,store,storage,raw,assertForeign(){for(const [key,value] of sentinels)assert.equal(store.get(key),value);assert.equal(store.size,sentinels.size+(store.has(STORAGE_KEY)?1:0));},async input(id,value){get(id).value=value;await get(id).fire('input');},async favorites(){get('favorites-only').checked=true;await get('favorites-only').fire('change');},async emit(type,event={}){for(const fn of events[type]??[])await fn(event);}};
  }
+ test('bookmark pagination append retains controls and focuses the first new detail button',async()=>{
+  const f=await fixture();
+  for(const shown of [80,120]){
+   const before=rows(f),controls=before.flatMap(descendants),replaced=f.work.replaced.length;
+   f.get('more').focus();await f.get('more').click();
+   sameNodes(rows(f).slice(0,before.length),before);sameNodes(before.flatMap(descendants),controls);
+   assert.equal(f.work.replaced.length,replaced,'pagination does not replace the result generation');
+   assert.equal(f.doc.activeElement,rows(f)[before.length].children[1],'keyboard entry point is the new detail control');
+   assert.deepEqual(ids(f),c.positions.slice(0,shown).map(p=>p.id));count(f,917,shown);assert.equal(f.work.writes.length,0);f.assertForeign();
+  }
+ });
  for(const shown of [40,80,917])test(`bookmark nonfiltered ${shown}-row prefix preserves every control and repeat-toggle state`,async()=>{
   const f=await fixture();while(rows(f).length<shown)await f.get('more').click();
   const before=rows(f),controls=descendants(f.get('results')),plan=descendants(f.get('plan-lines')),p=c.positions[7],button=star(before[7]);button.focus();

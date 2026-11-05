@@ -13,14 +13,14 @@ function currentLines(){return workspace.lines.map(l=>drafts.has(l.id)?{...l,qua
 function assertDrafts(){for(const l of currentLines())quantity(l.quantity,['fixed_chf','taxpoints'].includes(byId.get(l.id).price.kind));}
 function renderTotal(){const t=totals(currentLines(),byId);$('total').textContent=money(t.cents);$('total-status').textContent=t.complete?'Summe der ausgewählten Zeilen, kein vollständiger Rezeptur-/Abrechnungsbetrag.':`UNVOLLSTÄNDIG: ${t.unresolved} offene oder ungültige Zeile(n) nicht als CHF 0 bewertet.`;return t;}
 function updateFavorite(star,p){const starred=workspace.favorites.includes(p.id);star.textContent=starred?'★':'☆';star.setAttribute('aria-label',(starred?'Aus Merkliste entfernen: ':'Merken: ')+p.title);star.setAttribute('aria-pressed',String(starred));}
-function renderResults(removedRow=null){
+function renderResults(removedRow=null,start=0){
  const matches=filterPositions(catalog,index,{query:$('search').value,section:$('section').value,kind:$('kind').value,flag:$('flag').value,favoritesOnly:$('favorites-only').checked,favorites:workspace.favorites});
  const shown=matches.slice(0,visible),fragment=document.createDocumentFragment();
  // A favorite removal only deletes one match and may append the next prefix row.
  // Keep surviving rows connected, including any unrelated focused control.
  if(removedRow)removedRow.remove();
  const retained=removedRow?new Set([...$('results').children].map(row=>row.dataset.id)):null;
- for(const p of shown){
+ for(const p of shown.slice(start)){
   if(retained?.has(p.id))continue;
   const row=node('article','','result-row');row.dataset.id=p.id;
   const star=button('',()=>{
@@ -34,7 +34,7 @@ function renderResults(removedRow=null){
   const add=button('+',()=>addLine(p),'add');add.setAttribute('aria-label','Hinzufügen: '+p.title);row.append(star,main,add);fragment.append(row);
  }
  if(!shown.length)fragment.append(node('p','Keine Positionen für diese Filter. Suche/Filter zurücksetzen oder Originalquelle prüfen.','empty'));
- if(removedRow)$('results').append(fragment);else $('results').replaceChildren(fragment);
+ if(removedRow||start)$('results').append(fragment);else $('results').replaceChildren(fragment);
  $('result-count').textContent=`${matches.length} Treffer im vollständigen Katalog (${catalog.positions.length} Quellzeilen) · ${shown.length} angezeigt`;$('more').hidden=shown.length===matches.length;
 }
 function addLine(p){if(workspace.lines.some(l=>l.id===p.id)){report('Bereits in der Sammlung. Menge dort anpassen.');return;}if(workspace.lines.length>=1000)throw Error('Maximal 1 000 Zeilen.');workspace.lines.push({id:p.id,quantity:'1',note:''});persist();renderPlan();report('Hinzugefügt: '+p.title);}
@@ -96,7 +96,7 @@ function initialize(){
  $('source-button').addEventListener('click',()=>showSources());$('source-page').addEventListener('change',renderSourcePage);
  for(const id of ['search','section','kind','flag','favorites-only'])$(id).addEventListener(id==='search'?'input':'change',()=>{visible=PAGE_SIZE;renderResults();});
  $('reset').addEventListener('click',()=>{$('search').value='';$('section').value='';$('kind').value='';$('flag').value='';$('favorites-only').checked=false;visible=PAGE_SIZE;renderResults();});
- $('more').addEventListener('click',()=>{visible+=PAGE_SIZE;renderResults();});
+ $('more').addEventListener('click',()=>{const before=$('results').children.length;visible+=PAGE_SIZE;renderResults(null,before);$('results').children[before]?.querySelector('.row-main')?.focus();});
  $('plan-name').addEventListener('input',()=>{workspace.name=$('plan-name').value;persist();});$('plan-note').addEventListener('input',()=>{workspace.note=$('plan-note').value;persist();});
  $('export-json').addEventListener('click',()=>attempt(()=>exportJson()));$('export-csv').addEventListener('click',()=>attempt(()=>{assertDrafts();download('alt-zusammenstellung.csv',workspaceCsv(workspace,catalog),'text/csv;charset=utf-8');}));$('print').addEventListener('click',()=>attempt(printPlan));
  $('import-json').addEventListener('click',()=>{$('import-file').value='';$('import-file').click();});$('import-file').addEventListener('change',()=>attempt(()=>previewFile($('import-file').files[0])));
