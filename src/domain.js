@@ -62,7 +62,9 @@ export function workspaceCsv(w,c){
 }
 export function validateCatalog(c){
  if(!object(c)||c.schema!==1||c.edition!=='2026-07-01'||c.source_sha256!==SOURCE_SHA256||!Array.isArray(c.positions)||!Array.isArray(c.sections)||!Array.isArray(c.rules))throw Error('Ungültiges Katalogformat.');
- const ids=new Set(),sections=new Set(c.sections.map(s=>s.id)),rules=new Set(c.rules.map(r=>r.id));
+ const ids=new Set(),sections=new Set(),rules=new Set();
+ for(const s of c.sections){if(!object(s)||typeof s.id!=='string'||!s.id||sections.has(s.id)||typeof s.title!=='string'||!s.title)throw Error('Ungültiger oder doppelter Bereich.');sections.add(s.id);}
+ for(const r of c.rules){if(!object(r)||typeof r.id!=='string'||!r.id||rules.has(r.id))throw Error('Ungültige oder doppelte Quellregel.');rules.add(r.id);}
  for(const r of c.rules)if(typeof r.id!=='string'||typeof r.title!=='string'||typeof r.text!=='string'||!Array.isArray(r.pages)||r.pages.some(n=>!Number.isInteger(n)||n<1||n>34))throw Error('Ungültige Quellregel.');
  for(const p of c.positions){
   if(!object(p)||typeof p.id!=='string'||!/^[a-zA-Z0-9-]+$/.test(p.id)||ids.has(p.id)||typeof p.title!=='string'||!p.title||typeof p.code!=='string'||typeof p.unit!=='string'||typeof p.notes!=='string'||!sections.has(p.section)||!Array.isArray(p.hierarchy)||p.hierarchy.some(s=>typeof s!=='string')||!Array.isArray(p.flags)||p.flags.some(s=>!['L','St'].includes(s))||!Array.isArray(p.rule_ids)||p.rule_ids.some(id=>!rules.has(id))||!object(p.source)||!Number.isInteger(p.source.pdf_page)||p.source.pdf_page<1||p.source.pdf_page>34||!Number.isFinite(p.source.y_min)||!Number.isFinite(p.source.y_max)||p.source.y_min<0||p.source.y_max<p.source.y_min)throw Error('Ungültige oder doppelte Quellposition.');

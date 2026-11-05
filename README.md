@@ -29,6 +29,8 @@ Die Vorschau bindet ausschliesslich an `127.0.0.1`, standardmässig Port 3012. `
 
 JSON-Dateien dürfen bis zu 16 MiB gross sein. Damit lassen sich auch maximal lange gültige Zeilennotizen mit mehrbyteigen Zeichen oder JSON-escapierten Steuerzeichen wieder öffnen; die strengen Feld- und Umfangsgrenzen bleiben unverändert.
 
+Katalogbereiche und Quellregeln besitzen eindeutige primitive Zeichenfolgen-IDs und benannte Bereiche. Mehrdeutige IDs werden vor Aktivierung, Check und Build abgewiesen, damit Suche und Detail-/Druckansicht dieselbe Originalregel verwenden.
+
 ## Rechengrenzen
 
 **Keine Abrechnungs-/Erstattungszusage und kein Verordnungsprogramm.** MWST, Rezepturminimum CHF 5.–, Herstellungsbedingungen, Inklusivleistungen, Kombinationen, Limitierungen, Zuschläge und Versicherungsanspruch werden nicht automatisch geprüft/ergänzt. Der ausgewiesene Wert ist nur eine Teilsumme der bewusst gewählten Zeilen exkl. MWST.
