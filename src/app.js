@@ -83,7 +83,7 @@ function printPlan(){renderPrintPlan();window.print();}
 function beforePrint(){try{renderPrintPlan();}catch(e){const area=$('print-area');area.replaceChildren(node('h1','Keine gültige Druckansicht'),node('p',e.message));area.hidden=false;report(e.message);}}
 async function previewFile(file){
  const token=++importToken;importCandidate=null;$('import-confirm').disabled=true;
- if(!file)return;if(file.size>5*1024*1024)throw Error('Sicherung ist zu gross (maximal 5 MiB).');
+ if(!file)return;if(file.size>16*1024*1024)throw Error('Sicherung ist zu gross (maximal 16 MiB).');
  let data;try{data=await file.text();}catch(e){if(token!==importToken)return;throw e;}if(token!==importToken)return;
  const candidate=validateWorkspace(JSON.parse(data),catalog);assertDrafts();importSnapshot=JSON.stringify(workspace);importCandidate=candidate;
  $('import-preview').textContent=`„${candidate.name}“ · ${candidate.lines.length} Positionen · ${candidate.favorites.length} gemerkt · Ausgabe ${candidate.edition}. Aktuell: ${workspace.lines.length} Positionen. Noch nichts ersetzt.`;

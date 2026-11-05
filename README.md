@@ -27,6 +27,8 @@ Die Vorschau bindet ausschliesslich an `127.0.0.1`, standardmässig Port 3012. `
 - CSV mit Formelinjektionsschutz (auch nach führendem Whitespace) und helle Druckansicht. Notizen werden bei Export/Druck aktuell gelesen.
 - Drei sichtbare verwandte Kataloglinks, sechs weitere unter „Alle Kataloge“. Links sind Zielkonfiguration, keine Aussage über deren Veröffentlichung.
 
+JSON-Dateien dürfen bis zu 16 MiB gross sein. Damit lassen sich auch maximal lange gültige Zeilennotizen mit mehrbyteigen Zeichen oder JSON-escapierten Steuerzeichen wieder öffnen; die strengen Feld- und Umfangsgrenzen bleiben unverändert.
+
 ## Rechengrenzen
 
 **Keine Abrechnungs-/Erstattungszusage und kein Verordnungsprogramm.** MWST, Rezepturminimum CHF 5.–, Herstellungsbedingungen, Inklusivleistungen, Kombinationen, Limitierungen, Zuschläge und Versicherungsanspruch werden nicht automatisch geprüft/ergänzt. Der ausgewiesene Wert ist nur eine Teilsumme der bewusst gewählten Zeilen exkl. MWST.

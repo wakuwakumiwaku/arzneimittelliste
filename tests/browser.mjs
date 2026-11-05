@@ -371,7 +371,7 @@ try{
 
  await scenario('08-malformed-later-line-primitive-ids-duplicates-full-rejection',()=>isolated({workspace:seeded([line(material,'3.21','Keep first'),line(capsule,'2','Keep later')],[material.id,capsule.id])},async page=>{
   const good=await state(page);for(const [name,payload] of malformedFixtures(good))await rejectFile(page,Buffer.from(JSON.stringify(payload)),name);
-  await rejectFile(page,Buffer.from('{ invalid JSON'),'syntax');await rejectFile(page,Buffer.alloc(5*1024*1024+1,32),'over-5MiB');
+  await rejectFile(page,Buffer.from('{ invalid JSON'),'syntax');await rejectFile(page,Buffer.alloc(16*1024*1024+1,32),'over-16MiB');
  }));
 
  for(const [name,options] of [
